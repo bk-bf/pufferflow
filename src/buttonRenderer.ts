@@ -66,17 +66,30 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 			const line = task.lineNumber;
 			const range = new vscode.Range(line, 0, line, 0);
 
-			// Create button above the task line
-			const buttonText = task.isCompleted ? '🔄 Retry Task' : '▶️ Start Task';
-			const commandId = task.isCompleted ? 'taskflow.retryTask' : 'taskflow.startTask';
+			if (task.isCompleted) {
+				// For completed tasks, show "Task completed" indicator with green checkmark
+				const completedIndicator = new vscode.CodeLens(range, {
+					title: '$(check-all)  Task completed',  // check-all is typically green
+					command: '' // No command, just an indicator
+				});
+				codeLenses.push(completedIndicator);
 
-			const codeLens = new vscode.CodeLens(range, {
-				title: buttonText,
-				command: commandId,
-				arguments: [line, task]
-			});
-
-			codeLenses.push(codeLens);
+				// Add a separate retry button next to it
+				const retryButton = new vscode.CodeLens(range, {
+					title: '$(refresh)',
+					command: 'taskflow.retryTask',
+					arguments: [line, task]
+				});
+				codeLenses.push(retryButton);
+			} else {
+				// For incomplete tasks, show start button
+				const startButton = new vscode.CodeLens(range, {
+					title: '$(play)  Start Task',
+					command: 'taskflow.startTask',
+					arguments: [line, task]
+				});
+				codeLenses.push(startButton);
+			}
 
 			// Store button data for state management
 			const buttonId = `${document.uri.toString()}-${line}`;
@@ -141,6 +154,7 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	private loadingDecorationType!: vscode.TextEditorDecorationType;
 	private errorDecorationType!: vscode.TextEditorDecorationType;
 	private successDecorationType!: vscode.TextEditorDecorationType;
+	private buttonHighlightDecorationType!: vscode.TextEditorDecorationType;
 
 	constructor(taskParser: any) {
 		this.taskParser = taskParser;
@@ -180,28 +194,37 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	private createDecorationTypes(): void {
 		this.loadingDecorationType = vscode.window.createTextEditorDecorationType({
 			before: {
-				contentText: '⏳ ',
+				contentText: '$(loading~spin) ',
 				color: new vscode.ThemeColor('editorWarning.foreground'),
-				fontWeight: 'bold'
+				fontWeight: 'normal'
 			},
 			rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
 		});
 
 		this.errorDecorationType = vscode.window.createTextEditorDecorationType({
 			before: {
-				contentText: '❌ ',
+				contentText: '$(error) ',
 				color: new vscode.ThemeColor('errorForeground'),
-				fontWeight: 'bold'
+				fontWeight: 'normal'
 			},
 			rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
 		});
 
 		this.successDecorationType = vscode.window.createTextEditorDecorationType({
 			before: {
-				contentText: '✅ ',
+				contentText: '$(check) ',
 				color: new vscode.ThemeColor('editorInfo.foreground'),
-				fontWeight: 'bold'
+				fontWeight: 'normal'
 			},
+			rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
+		});
+
+		// Button highlight decoration for better visibility
+		this.buttonHighlightDecorationType = vscode.window.createTextEditorDecorationType({
+			backgroundColor: new vscode.ThemeColor('editor.hoverHighlightBackground'),
+			border: '1px solid',
+			borderColor: new vscode.ThemeColor('focusBorder'),
+			borderRadius: '3px',
 			rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
 		});
 	}
@@ -331,5 +354,6 @@ export class ButtonRenderer implements ButtonRendererInterface {
 		this.loadingDecorationType.dispose();
 		this.errorDecorationType.dispose();
 		this.successDecorationType.dispose();
+		this.buttonHighlightDecorationType.dispose();
 	}
 }
