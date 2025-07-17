@@ -9,7 +9,9 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 node_modules/**
+src/**
 test/**
+out/test/**
 .kiro/**
 demo-tasks.md
 test-tasks.md

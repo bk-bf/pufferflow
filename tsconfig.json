@@ -13,13 +13,16 @@
 			"mocha"
 		],
 		"sourceMap": true,
-		"rootDir": ".",
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true
 	},
+	"include": [
+		"src/**/*",
+		"test/**/*"
+	],
 	"exclude": [
 		"node_modules",
 		".vscode-test",
