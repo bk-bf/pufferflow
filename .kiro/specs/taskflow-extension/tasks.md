@@ -1,26 +1,26 @@
 # Implementation Plan
 
-- [ ] 1. Set up extension scaffolding and project structure
+- [x] 1. Set up extension scaffolding and project structure
   - Create directory structure following technical architecture
   - Set up package.json with minimal dependencies
   - Configure TypeScript settings
   - _Requirements: 6.1, 7.1_
 
-- [ ] 2. Implement markdown task parsing
-- [ ] 2.1 Create task parser module
+- [x] 2. Implement markdown task parsing
+- [x] 2.1 Create task parser module
   - Implement detection of tasks.md files
   - Create parser for markdown task items
   - Add support for detecting task completion state
   - _Requirements: 1.1, 1.4, 2.1, 7.1, 7.2, 7.3_
 
-- [ ] 2.2 Implement efficient parsing logic
+- [x] 2.2 Implement efficient parsing logic
   - Add caching for parsed results
   - Implement parsing only when document changes
   - Create TaskItem interface and data model
   - _Requirements: 8.1, 8.3, 8.4_
 
-- [ ] 3. Create button rendering system
-- [ ] 3.1 Implement button UI components
+- [x] 3. Create button rendering system
+- [x] 3.1 Implement button UI components
   - Create decorations for "Start Task" buttons
   - Create decorations for "Retry" buttons
   - Position buttons above task items

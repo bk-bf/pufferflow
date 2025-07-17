@@ -1,0 +1,53 @@
+{
+	"name": "taskflow",
+	"displayName": "TaskFlow",
+	"description": "Bring intelligent task execution to VS Code with zero friction",
+	"version": "0.1.0",
+	"publisher": "taskflow",
+	"engines": {
+		"vscode": "^1.74.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"keywords": [
+		"tasks",
+		"markdown",
+		"automation",
+		"agent",
+		"workflow"
+	],
+	"activationEvents": [
+		"onLanguage:markdown"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "taskflow.startTask",
+				"title": "Start Task"
+			},
+			{
+				"command": "taskflow.retryTask",
+				"title": "Retry Task"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"test": "npm run compile && mocha out/test/**/*.test.js",
+		"test:watch": "npm run compile && mocha out/test/**/*.test.js --watch"
+	},
+	"devDependencies": {
+		"@types/mocha": "^10.0.10",
+		"@types/node": "16.x",
+		"@types/vscode": "^1.74.0",
+		"mocha": "^11.7.1",
+		"typescript": "^4.9.4"
+	},
+	"dependencies": {
+		"markdown-it": "^13.0.1"
+	}
+}
