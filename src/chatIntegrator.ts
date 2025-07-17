@@ -17,9 +17,9 @@ export class ChatIntegrator {
     }
 
     /**
-     * Construct a complete prompt with task info (steering docs will be attached separately)
+     * Construct a complete prompt with task info and steering file instructions
      */
-    private constructPrompt(task: TaskItem): string {
+    private constructPrompt(task: TaskItem, steeringFiles: vscode.Uri[] = []): string {
         const parts: string[] = [];
 
         // Add task information
@@ -27,6 +27,16 @@ export class ChatIntegrator {
         parts.push(`**Task:** ${task.taskText}`);
         parts.push(`**Status:** ${task.isCompleted ? 'Completed (retry)' : 'New task'}`);
         parts.push(`**Line:** ${task.lineNumber + 1}`);
+
+        // Add steering files information if available
+        if (steeringFiles.length > 0) {
+            parts.push('\n# 📎 Please Attach Steering Documents\n');
+            parts.push('The following steering documents contain important guidelines for this project:');
+            steeringFiles.forEach(file => {
+                parts.push(`- ${path.basename(file.fsPath)} (${file.fsPath})`);
+            });
+            parts.push('\n**Please attach these files to your chat for context before proceeding.**');
+        }
 
         // Add instructions
         parts.push('\n# 🚀 Instructions\n');
@@ -103,19 +113,10 @@ export class ChatIntegrator {
 
             // Try to send the prompt automatically first
             if (await this.tryDirectChatInput(prompt)) {
-                // Success! Show attachment instructions if needed
+                // Success! Just log it, no popup notifications
+                this.log('Prompt sent to chat successfully');
                 if (steeringFiles.length > 0) {
-                    vscode.window.showInformationMessage(
-                        `📋 Prompt sent to chat! Please attach: ${steeringFiles.map(f => path.basename(f.fsPath)).join(', ')}`,
-                        'Open Steering Folder'
-                    ).then(action => {
-                        if (action === 'Open Steering Folder') {
-                            const steeringFolder = vscode.Uri.file(path.dirname(steeringFiles[0].fsPath));
-                            vscode.commands.executeCommand('revealInExplorer', steeringFolder);
-                        }
-                    });
-                } else {
-                    vscode.window.showInformationMessage('📋 Prompt sent to chat successfully!');
+                    this.log(`Steering files available for manual attachment: ${steeringFiles.map(f => path.basename(f.fsPath)).join(', ')}`);
                 }
                 return;
             }
@@ -126,27 +127,11 @@ export class ChatIntegrator {
             // Fallback: Copy to clipboard and show instructions
             await vscode.env.clipboard.writeText(prompt);
 
-            // Show notification with next steps
-            let message = '⚠️ Chat opened but automatic prompt submission failed\n📋 Prompt copied to clipboard - please paste it manually';
+            // Just log the fallback, no popup notifications
+            this.log('Prompt copied to clipboard - please paste into chat');
             if (steeringFiles.length > 0) {
-                message += `\n📎 Then attach: ${steeringFiles.map(f => path.basename(f.fsPath)).join(', ')}`;
-            }
-
-            const action = await vscode.window.showInformationMessage(
-                message,
-                'Open Steering Folder', 'Show Prompt', 'Copy File Paths'
-            );
-
-            if (action === 'Open Steering Folder' && steeringFiles.length > 0) {
-                // Open the steering folder in VS Code explorer
-                const steeringFolder = vscode.Uri.file(path.dirname(steeringFiles[0].fsPath));
-                await vscode.commands.executeCommand('revealInExplorer', steeringFolder);
-            } else if (action === 'Show Prompt') {
-                this.showPromptInOutput(prompt, steeringFiles);
-            } else if (action === 'Copy File Paths') {
-                const filePaths = steeringFiles.map(f => f.fsPath).join('\n');
-                await vscode.env.clipboard.writeText(filePaths);
-                vscode.window.showInformationMessage('Steering file paths copied to clipboard');
+                this.log(`Steering files available: ${steeringFiles.map(f => path.basename(f.fsPath)).join(', ')}`);
+                this.log('Open .kiro/steering folder to manually attach files');
             }
 
         } catch (error) {
@@ -212,25 +197,8 @@ export class ChatIntegrator {
             // Now try to inject the prompt using various methods
             if (await this.injectPromptIntoChat(prompt)) {
                 this.log('Successfully injected prompt into chat');
-
-                // Show attachment instructions if needed
-                if (attachments.length > 0) {
-                    vscode.window.showInformationMessage(
-                        `📋 Prompt sent to chat! Please attach: ${attachments.map(f => path.basename(f.fsPath)).join(', ')}`,
-                        'Open Steering Folder'
-                    ).then(action => {
-                        if (action === 'Open Steering Folder') {
-                            const steeringFolder = vscode.Uri.file(path.dirname(attachments[0].fsPath));
-                            vscode.commands.executeCommand('revealInExplorer', steeringFolder);
-                        }
-                    });
-                } else {
-                    vscode.window.showInformationMessage('📋 Prompt sent to VS Code chat successfully!');
-                }
                 return true;
-            }
-
-            // Method 2: Try specific chat commands (these likely won't work but worth trying)
+            }            // Method 2: Try specific chat commands (these likely won't work but worth trying)
             const chatCommands = [
                 { cmd: 'github.copilot.chat.sendMessage', param: prompt },
                 { cmd: 'workbench.action.chat.submit', param: { text: prompt } },
@@ -241,23 +209,12 @@ export class ChatIntegrator {
                 try {
                     await vscode.commands.executeCommand(cmd, param);
                     this.log(`Successfully sent prompt using command: ${cmd}`);
-
-                    if (attachments.length > 0) {
-                        vscode.window.showInformationMessage(
-                            `📋 Prompt sent! Please attach: ${attachments.map(f => path.basename(f.fsPath)).join(', ')}`,
-                            'Open Steering Folder'
-                        );
-                    } else {
-                        vscode.window.showInformationMessage('📋 Prompt sent successfully!');
-                    }
                     return true;
                 } catch (cmdError) {
                     this.log(`Command ${cmd} failed: ${cmdError}`);
                     continue;
                 }
-            }
-
-            return false;
+            } return false;
         } catch (error) {
             this.logError(`Error sending to VS Code agent: ${error}`);
             return false;
@@ -359,21 +316,6 @@ export class ChatIntegrator {
                 try {
                     await vscode.commands.executeCommand(command, prompt);
                     this.log(`Successfully sent prompt to Copilot using: ${command}`);
-
-                    if (attachments.length > 0) {
-                        vscode.window.showInformationMessage(
-                            `📋 Prompt sent to Copilot! Please attach: ${attachments.map(f => path.basename(f.fsPath)).join(', ')}`,
-                            'Open Steering Folder'
-                        ).then(action => {
-                            if (action === 'Open Steering Folder') {
-                                const steeringFolder = vscode.Uri.file(path.dirname(attachments[0].fsPath));
-                                vscode.commands.executeCommand('revealInExplorer', steeringFolder);
-                            }
-                        });
-                    } else {
-                        vscode.window.showInformationMessage('📋 Prompt sent to Copilot successfully!');
-                    }
-
                     return true;
                 } catch (cmdError) {
                     this.log(`Copilot command ${command} not available: ${cmdError}`);
@@ -413,22 +355,15 @@ export class ChatIntegrator {
             // Copy prompt to clipboard
             await vscode.env.clipboard.writeText(prompt);
 
-            let message = 'Could not open chat automatically. Prompt copied to clipboard.';
+            // Just log the fallback information, no popup
+            this.log('Could not open chat automatically. Prompt copied to clipboard.');
             if (steeringFiles.length > 0) {
-                message += `\nPlease manually attach: ${steeringFiles.map(f => path.basename(f.fsPath)).join(', ')}`;
+                this.log(`Steering files available for manual attachment: ${steeringFiles.map(f => path.basename(f.fsPath)).join(', ')}`);
             }
 
-            const action = await vscode.window.showWarningMessage(
-                message,
-                'Show Files', 'Show Prompt'
-            );
+            // Automatically show the prompt in output for reference
+            this.showPromptInOutput(prompt, steeringFiles);
 
-            if (action === 'Show Files' && steeringFiles.length > 0) {
-                const steeringFolder = vscode.Uri.file(path.dirname(steeringFiles[0].fsPath));
-                await vscode.commands.executeCommand('revealInExplorer', steeringFolder);
-            } else if (action === 'Show Prompt') {
-                this.showPromptInOutput(prompt, steeringFiles);
-            }
         } catch (error) {
             this.logError(`Fallback chat integration failed: ${error}`);
         }
@@ -463,10 +398,13 @@ export class ChatIntegrator {
         try {
             this.log(`Executing task: ${task.taskText}`);
 
-            // Construct prompt (without steering docs embedded)
-            const prompt = this.constructPrompt(task);
+            // Get steering files first
+            const steeringFiles = await this.getSteeringFilePaths();
 
-            // Open VS Code chat with the prompt and steering file attachments
+            // Construct prompt with steering file information included
+            const prompt = this.constructPrompt(task, steeringFiles);
+
+            // Open VS Code chat with the prompt
             await this.openChatWithPrompt(prompt);
 
             return {
@@ -557,7 +495,7 @@ export class ChatIntegrator {
             const capabilities = await this.getChatCapabilities();
 
             // Create a simple test prompt
-            const testPrompt = 'Hello! This is a test from TaskFlow extension. Please respond to confirm the chat integration is working.';
+            const testPrompt = '# 🧪 TaskFlow Test\n\nHello! This is a test from TaskFlow extension. Please respond to confirm the chat integration is working.';
 
             if (isAvailable) {
                 await this.openChatWithPrompt(testPrompt);
