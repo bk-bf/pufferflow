@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
 		buttonRenderer = new ButtonRenderer(taskParser);
 		agentCommunicator = new AgentCommunicator(context);
 
-		// Test command to verify extension is working
+		// Test command to verify extension is working with error handling
 		const testCommand = vscode.commands.registerCommand('taskflow.test', async () => {
 			const editor = vscode.window.activeTextEditor;
 			if (!editor) {
@@ -33,21 +33,37 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.window.showInformationMessage(`TaskFlow: Found ${tasks.length} tasks in this document!`);
 				console.log('Tasks found:', tasks);
 
-				// Test agent availability
-				const isAgentAvailable = await agentCommunicator.isAgentAvailable();
-				const capabilities = await agentCommunicator.getAgentCapabilities();
-				console.log('Agent available:', isAgentAvailable);
-				console.log('Agent capabilities:', capabilities);
+				// Test agent availability and error handling
+				try {
+					const isAgentAvailable = await agentCommunicator.isAgentAvailable();
+					const capabilities = await agentCommunicator.getAgentCapabilities();
+					console.log('Agent available:', isAgentAvailable);
+					console.log('Agent capabilities:', capabilities);
 
-				vscode.window.showInformationMessage(
-					`Agent Status: ${isAgentAvailable ? 'Available' : 'Not Available'} - Capabilities: ${capabilities.join(', ')}`
-				);
+					// Test fallback methods
+					const fallbackResults = await agentCommunicator.testFallbackMethods();
+					console.log('Fallback test results:', fallbackResults);
+
+					const availableMethods = fallbackResults.filter(r => r.available).map(r => r.method);
+					const unavailableMethods = fallbackResults.filter(r => !r.available);
+
+					let statusMessage = `Agent Status: ${isAgentAvailable ? 'Available' : 'Not Available'}`;
+					statusMessage += `\nAvailable Methods: ${availableMethods.join(', ')}`;
+
+					if (unavailableMethods.length > 0) {
+						statusMessage += `\nUnavailable: ${unavailableMethods.map(r => `${r.method} (${r.error || 'unknown'})`).join(', ')}`;
+					}
+
+					vscode.window.showInformationMessage(statusMessage);
+
+				} catch (error) {
+					vscode.window.showErrorMessage(`Error testing agent: ${error}`);
+					agentCommunicator.showOutput();
+				}
 			} else {
 				vscode.window.showWarningMessage('TaskFlow: This is not a markdown document');
 			}
-		});
-
-		// Enhanced start task command with agent communication
+		});		// Enhanced start task command with agent communication
 		const startTaskCommand = vscode.commands.registerCommand('taskflow.startTask', async (lineNumber?: number, task?: any) => {
 			if (lineNumber === undefined) {
 				vscode.window.showErrorMessage('TaskFlow: No task line specified');
@@ -81,8 +97,38 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 					}
 				} else {
-					vscode.window.showErrorMessage(`TaskFlow: ${result.message}`);
-					agentCommunicator.showOutput();
+					// Enhanced error handling with recovery suggestions
+					const errorType = result.errorType || 'unknown';
+					const isRetryable = result.retryable || false;
+
+					const actions = ['Show Details'];
+					if (isRetryable) {
+						actions.unshift('Retry');
+					}
+
+					const action = await vscode.window.showErrorMessage(
+						`TaskFlow: ${result.message}`,
+						...actions
+					);
+
+					if (action === 'Retry') {
+						// Retry the task
+						vscode.commands.executeCommand('taskflow.startTask', lineNumber, task);
+					} else if (action === 'Show Details') {
+						agentCommunicator.showOutput();
+
+						// Show recovery suggestions
+						const suggestions = agentCommunicator.getErrorRecoverySuggestions(errorType as any);
+						const suggestionText = suggestions.join('\n• ');
+						vscode.window.showInformationMessage(
+							`Recovery suggestions:\n• ${suggestionText}`,
+							'Copy to Clipboard'
+						).then(action => {
+							if (action === 'Copy to Clipboard') {
+								vscode.env.clipboard.writeText(suggestionText);
+							}
+						});
+					}
 				}
 
 			} catch (error) {
@@ -127,8 +173,38 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 					}
 				} else {
-					vscode.window.showErrorMessage(`TaskFlow: Task retry failed: ${result.message}`);
-					agentCommunicator.showOutput();
+					// Enhanced error handling with recovery suggestions
+					const errorType = result.errorType || 'unknown';
+					const isRetryable = result.retryable || false;
+
+					const actions = ['Show Details'];
+					if (isRetryable) {
+						actions.unshift('Retry Again');
+					}
+
+					const action = await vscode.window.showErrorMessage(
+						`TaskFlow: Task retry failed: ${result.message}`,
+						...actions
+					);
+
+					if (action === 'Retry Again') {
+						// Retry the task again
+						vscode.commands.executeCommand('taskflow.retryTask', lineNumber, task);
+					} else if (action === 'Show Details') {
+						agentCommunicator.showOutput();
+
+						// Show recovery suggestions
+						const suggestions = agentCommunicator.getErrorRecoverySuggestions(errorType as any);
+						const suggestionText = suggestions.join('\n• ');
+						vscode.window.showInformationMessage(
+							`Recovery suggestions:\n• ${suggestionText}`,
+							'Copy to Clipboard'
+						).then(action => {
+							if (action === 'Copy to Clipboard') {
+								vscode.env.clipboard.writeText(suggestionText);
+							}
+						});
+					}
 				}
 
 			} catch (error) {
