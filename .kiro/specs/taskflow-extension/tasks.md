@@ -1,98 +1,79 @@
-# Implementation Plan
+# Implementation Plan - SIMPLIFIED ✂️
+
+## ✅ COMPLETED (Weekend Sprint Phase 1)
 
 - [x] 1. Set up extension scaffolding and project structure
   - Create directory structure following technical architecture
   - Set up package.json with minimal dependencies
   - Configure TypeScript settings
-  - _Requirements: 6.1, 7.1_
 
 - [x] 2. Implement markdown task parsing
 - [x] 2.1 Create task parser module
   - Implement detection of tasks.md files
   - Create parser for markdown task items
   - Add support for detecting task completion state
-  - _Requirements: 1.1, 1.4, 2.1, 7.1, 7.2, 7.3_
 
 - [x] 2.2 Implement efficient parsing logic
   - Add caching for parsed results
   - Implement parsing only when document changes
   - Create TaskItem interface and data model
-  - _Requirements: 8.1, 8.3, 8.4_
 
 - [x] 3. Create button rendering system
 - [x] 3.1 Implement button UI components
   - Create decorations for "Start Task" buttons
   - Create decorations for "Retry" buttons
   - Position buttons above task items
-  - _Requirements: 1.2, 2.2_
 
 - [x] 3.2 Implement button state management
   - Add loading state for buttons during execution
   - Implement button disabling during task execution
   - Create visual feedback for execution states
-  - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [x] 4. Develop agent communication system
-- [x] 4.1 Create agent communicator module
-  - Implement VS Code agent API integration
-  - Create prompt construction logic
-  - Add response parsing functionality
-  - _Requirements: 3.1, 5.1, 5.2, 5.3, 5.4, 6.1_
+## 🎯 CORE MISSION (Weekend Sprint Phase 2) - SIMPLIFIED
 
-- [x] 4.2 Implement error handling for agent communication
-  - Add fallback communication methods
-  - Implement error logging to output channel
-  - Create graceful error state handling
-  - _Requirements: 6.2, 6.3, 6.4_
+- [ ] 4. Implement chat integration (THE ACTUAL GOAL)
+- [ ] 4.1 Add VS Code chat integration
+  - Connect button clicks to VS Code chat panel
+  - Implement steering docs inclusion in prompts
+  - Create simple prompt construction
+  - _This is the ONLY thing we actually need!_
 
-- [ ] 5. Build task state management
-- [ ] 5.1 Implement task completion state toggling
-  - Create functions to toggle between [ ] and [x]
-  - Add document modification capabilities
-  - Implement automatic file saving
-  - _Requirements: 3.1, 3.2, 3.3_
+- [ ] 4.2 Add steering docs prompt system
+  - Read steering docs from .kiro/steering folder
+  - Include context in chat prompts
+  - Format prompts for agent execution
 
-- [ ] 5.2 Add state persistence logic
-  - Ensure state changes are saved to disk
-  - Handle concurrent modifications
-  - Implement error handling for state changes
-  - _Requirements: 3.2, 3.4_
+- [ ] 5. Package and test
+- [ ] 5.1 Basic testing and packaging
+  - Test button → chat workflow
+  - Package extension for distribution
+  - Create simple README
 
-- [ ] 6. Create extension activation and lifecycle management
-- [ ] 6.1 Implement proper activation events
-  - Configure activation for markdown files
-  - Add efficient resource management
-  - Create proper disposal patterns
-  - _Requirements: 7.1, 7.2, 7.3, 7.4, 8.4_
+## ❌ REMOVED (Over-engineered / Unnecessary)
 
-- [ ] 6.2 Add document change detection
-  - Implement event listeners for document changes
-  - Create efficient update mechanism
-  - Add support for multiple open files
-  - _Requirements: 7.4, 8.3_
+~~- 4. Develop agent communication system~~ 
+  - ❌ REMOVED: VS Code agent can handle this natively
+  
+~~- 5. Build task state management~~
+  - ❌ REMOVED: Agent can modify files directly
+  
+~~- 6. Create extension activation and lifecycle management~~
+  - ❌ REMOVED: Basic activation is sufficient
+  
+~~- 7. Implement end-to-end task execution flow~~
+  - ❌ REMOVED: Chat handles execution
+  
+~~- 8. Perform testing and packaging~~
+  - ❌ SIMPLIFIED: Basic testing only
 
-- [ ] 7. Implement end-to-end task execution flow
-- [ ] 7.1 Connect button clicks to agent execution
-  - Wire up button click events to agent communicator
-  - Implement task execution workflow
-  - Create completion detection logic
-  - _Requirements: 1.3, 2.3, 2.4_
+## 📝 SCOPE REALITY CHECK
 
-- [ ] 7.2 Add task completion handling
-  - Implement automatic task completion marking
-  - Create button state updates after completion
-  - Add error handling for failed executions
-  - _Requirements: 3.1, 3.3, 3.4, 4.3_
+**What we thought we needed:** Complex agent API, state management, error handling, retry logic, document modification, lifecycle management...
 
-- [ ] 8. Perform testing and packaging
-- [ ] 8.1 Implement basic unit tests
-  - Create tests for task parsing
-  - Add tests for state management
-  - Test prompt construction logic
-  - _Requirements: All_
+**What we actually need:** Button click → Open chat → Send prompt with steering docs
 
-- [ ] 8.2 Package extension for distribution
-  - Create README documentation
-  - Configure extension manifest
-  - Prepare for marketplace submission
-  - _Requirements: All_
+**Estimated remaining work:** 2-3 hours (not 2-3 days!)
+
+---
+
+*Note: This reflects the #scope-discipline principle of "simplest implementation possible" and aligns with the weekend MVP timeline. The VS Code agent already handles file reading, editing, and saving - we just need to connect our buttons to the chat interface.*

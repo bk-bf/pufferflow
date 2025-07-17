@@ -89,7 +89,7 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 				let retryCommand = 'taskflow.retryTask';
 
 				if (isLoading) {
-					retryTitle = '$(loading~spin)  Retrying...';
+					retryTitle = '$(sync~spin)  Retrying...';
 					retryCommand = ''; // Disable command when loading
 				} else if (isDisabled) {
 					retryTitle = '$(circle-slash)  Retry';
@@ -108,7 +108,7 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 				let startCommand = 'taskflow.startTask';
 
 				if (isLoading) {
-					startTitle = '$(loading~spin)  Executing...';
+					startTitle = '$(sync~spin)  Executing...';
 					startCommand = ''; // Disable command when loading
 				} else if (isDisabled) {
 					startTitle = '$(circle-slash)  Start Task';
