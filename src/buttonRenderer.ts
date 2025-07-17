@@ -35,6 +35,10 @@ export interface ButtonData {
 export interface ButtonRendererInterface {
 	renderButtons(editor: vscode.TextEditor, tasks: TaskItem[]): void;
 	updateButtonState(lineNumber: number, isLoading: boolean): void;
+	startTaskExecution(lineNumber: number): void;
+	endTaskExecution(lineNumber: number, success?: boolean): void;
+	disableButton(lineNumber: number): void;
+	enableButton(lineNumber: number): void;
 	clearButtons(): void;
 }
 
@@ -66,6 +70,12 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 			const line = task.lineNumber;
 			const range = new vscode.Range(line, 0, line, 0);
 
+			// Check if this button is in loading state
+			const buttonId = `${document.uri.toString()}-${line}`;
+			const existingButton = this.buttons.get(buttonId);
+			const isLoading = existingButton?.state === ButtonState.Loading;
+			const isDisabled = existingButton?.state === ButtonState.Disabled;
+
 			if (task.isCompleted) {
 				// For completed tasks, show "Task completed" indicator with green checkmark
 				const completedIndicator = new vscode.CodeLens(range, {
@@ -74,29 +84,50 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 				});
 				codeLenses.push(completedIndicator);
 
-				// Add a separate retry button next to it
+				// Add a separate retry button with state-aware styling
+				let retryTitle = '$(refresh)';
+				let retryCommand = 'taskflow.retryTask';
+
+				if (isLoading) {
+					retryTitle = '$(loading~spin)  Retrying...';
+					retryCommand = ''; // Disable command when loading
+				} else if (isDisabled) {
+					retryTitle = '$(circle-slash)  Retry';
+					retryCommand = ''; // Disable command when disabled
+				}
+
 				const retryButton = new vscode.CodeLens(range, {
-					title: '$(refresh)',
-					command: 'taskflow.retryTask',
-					arguments: [line, task]
+					title: retryTitle,
+					command: retryCommand,
+					arguments: retryCommand ? [line, task] : undefined
 				});
 				codeLenses.push(retryButton);
 			} else {
-				// For incomplete tasks, show start button
+				// For incomplete tasks, show start button with state-aware styling
+				let startTitle = '$(play)  Start Task';
+				let startCommand = 'taskflow.startTask';
+
+				if (isLoading) {
+					startTitle = '$(loading~spin)  Executing...';
+					startCommand = ''; // Disable command when loading
+				} else if (isDisabled) {
+					startTitle = '$(circle-slash)  Start Task';
+					startCommand = ''; // Disable command when disabled
+				}
+
 				const startButton = new vscode.CodeLens(range, {
-					title: '$(play)  Start Task',
-					command: 'taskflow.startTask',
-					arguments: [line, task]
+					title: startTitle,
+					command: startCommand,
+					arguments: startCommand ? [line, task] : undefined
 				});
 				codeLenses.push(startButton);
 			}
 
-			// Store button data for state management
-			const buttonId = `${document.uri.toString()}-${line}`;
+			// Store/update button data for state management
 			this.buttons.set(buttonId, {
 				id: buttonId,
 				lineNumber: line,
-				state: ButtonState.Normal,
+				state: existingButton?.state || ButtonState.Normal,
 				type: task.isCompleted ? 'retry' : 'start',
 				taskItem: task
 			});
@@ -192,30 +223,28 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	 * Create decoration types for visual feedback
 	 */
 	private createDecorationTypes(): void {
+		// Use subtle background colors instead of content text to avoid interfering with markdown
 		this.loadingDecorationType = vscode.window.createTextEditorDecorationType({
-			before: {
-				contentText: '$(loading~spin) ',
-				color: new vscode.ThemeColor('editorWarning.foreground'),
-				fontWeight: 'normal'
-			},
+			backgroundColor: new vscode.ThemeColor('editorWarning.background'),
+			border: '1px solid',
+			borderColor: new vscode.ThemeColor('editorWarning.border'),
+			borderRadius: '3px',
 			rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
 		});
 
 		this.errorDecorationType = vscode.window.createTextEditorDecorationType({
-			before: {
-				contentText: '$(error) ',
-				color: new vscode.ThemeColor('errorForeground'),
-				fontWeight: 'normal'
-			},
+			backgroundColor: new vscode.ThemeColor('errorBackground'),
+			border: '1px solid',
+			borderColor: new vscode.ThemeColor('errorBorder'),
+			borderRadius: '3px',
 			rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
 		});
 
 		this.successDecorationType = vscode.window.createTextEditorDecorationType({
-			before: {
-				contentText: '$(check) ',
-				color: new vscode.ThemeColor('editorInfo.foreground'),
-				fontWeight: 'normal'
-			},
+			backgroundColor: new vscode.ThemeColor('editorInfo.background'),
+			border: '1px solid',
+			borderColor: new vscode.ThemeColor('editorInfo.border'),
+			borderRadius: '3px',
 			rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
 		});
 
@@ -266,10 +295,80 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	}
 
 	/**
+	 * Start task execution - puts button in loading state and disables interaction
+	 */
+	startTaskExecution(lineNumber: number): void {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			return;
+		}
+
+		const documentUri = editor.document.uri.toString();
+
+		// Update button state to loading
+		this.codeLensProvider.updateButtonState(documentUri, lineNumber, ButtonState.Loading);
+
+		// Show loading decoration
+		this.showLoadingDecoration(editor, lineNumber);
+	}
+
+	/**
+	 * End task execution - removes loading state and restores normal interaction
+	 */
+	endTaskExecution(lineNumber: number, success: boolean = true): void {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			return;
+		}
+
+		const documentUri = editor.document.uri.toString();
+
+		// Update button state back to normal
+		this.codeLensProvider.updateButtonState(documentUri, lineNumber, ButtonState.Normal);
+
+		// Clear loading decoration
+		this.clearDecorations(editor, lineNumber);
+
+		// Show appropriate feedback decoration
+		if (success) {
+			this.showSuccessDecoration(editor, lineNumber);
+		} else {
+			this.showErrorDecoration(editor, lineNumber);
+		}
+	}
+
+	/**
+	 * Disable button temporarily (for multi-execution prevention)
+	 */
+	disableButton(lineNumber: number): void {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			return;
+		}
+
+		const documentUri = editor.document.uri.toString();
+		this.codeLensProvider.updateButtonState(documentUri, lineNumber, ButtonState.Disabled);
+	}
+
+	/**
+	 * Enable button (restore from disabled state)
+	 */
+	enableButton(lineNumber: number): void {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			return;
+		}
+
+		const documentUri = editor.document.uri.toString();
+		this.codeLensProvider.updateButtonState(documentUri, lineNumber, ButtonState.Normal);
+	}
+
+	/**
 	 * Show loading decoration on a specific line
 	 */
 	private showLoadingDecoration(editor: vscode.TextEditor, lineNumber: number): void {
-		const range = new vscode.Range(lineNumber, 0, lineNumber, 0);
+		const line = editor.document.lineAt(lineNumber);
+		const range = new vscode.Range(lineNumber, 0, lineNumber, line.text.length);
 		editor.setDecorations(this.loadingDecorationType, [range]);
 	}
 
@@ -277,7 +376,8 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	 * Show success decoration on a specific line
 	 */
 	showSuccessDecoration(editor: vscode.TextEditor, lineNumber: number): void {
-		const range = new vscode.Range(lineNumber, 0, lineNumber, 0);
+		const line = editor.document.lineAt(lineNumber);
+		const range = new vscode.Range(lineNumber, 0, lineNumber, line.text.length);
 		editor.setDecorations(this.successDecorationType, [range]);
 
 		// Clear after 2 seconds
@@ -290,7 +390,8 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	 * Show error decoration on a specific line
 	 */
 	showErrorDecoration(editor: vscode.TextEditor, lineNumber: number): void {
-		const range = new vscode.Range(lineNumber, 0, lineNumber, 0);
+		const line = editor.document.lineAt(lineNumber);
+		const range = new vscode.Range(lineNumber, 0, lineNumber, line.text.length);
 		editor.setDecorations(this.errorDecorationType, [range]);
 
 		// Clear after 3 seconds
@@ -303,7 +404,6 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	 * Clear decorations from a specific line
 	 */
 	private clearDecorations(editor: vscode.TextEditor, lineNumber: number): void {
-		const range = new vscode.Range(lineNumber, 0, lineNumber, 0);
 		editor.setDecorations(this.loadingDecorationType, []);
 		editor.setDecorations(this.errorDecorationType, []);
 		editor.setDecorations(this.successDecorationType, []);

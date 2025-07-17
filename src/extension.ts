@@ -34,14 +34,62 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		});
 
-		// Simple start task command
-		const startTaskCommand = vscode.commands.registerCommand('taskflow.startTask', async (lineNumber?: number) => {
-			vscode.window.showInformationMessage(`TaskFlow: Start task at line ${lineNumber || 'current'}`);
+		// Enhanced start task command with state management
+		const startTaskCommand = vscode.commands.registerCommand('taskflow.startTask', async (lineNumber?: number, task?: any) => {
+			if (lineNumber === undefined) {
+				vscode.window.showErrorMessage('TaskFlow: No task line specified');
+				return;
+			}
+
+			try {
+				// Start execution state
+				buttonRenderer.startTaskExecution(lineNumber);
+
+				// Show user feedback
+				vscode.window.showInformationMessage(`TaskFlow: Starting task at line ${lineNumber + 1}...`);
+
+				// Simulate task execution (replace with actual agent communication later)
+				await new Promise(resolve => setTimeout(resolve, 2000));
+
+				// End execution state with success
+				buttonRenderer.endTaskExecution(lineNumber, true);
+
+				vscode.window.showInformationMessage(`TaskFlow: Task completed successfully!`);
+
+			} catch (error) {
+				// End execution state with error
+				buttonRenderer.endTaskExecution(lineNumber, false);
+				vscode.window.showErrorMessage(`TaskFlow: Task execution failed: ${error}`);
+			}
 		});
 
-		// Simple retry task command  
-		const retryTaskCommand = vscode.commands.registerCommand('taskflow.retryTask', async (lineNumber?: number) => {
-			vscode.window.showInformationMessage(`TaskFlow: Retry task at line ${lineNumber || 'current'}`);
+		// Enhanced retry task command with state management
+		const retryTaskCommand = vscode.commands.registerCommand('taskflow.retryTask', async (lineNumber?: number, task?: any) => {
+			if (lineNumber === undefined) {
+				vscode.window.showErrorMessage('TaskFlow: No task line specified');
+				return;
+			}
+
+			try {
+				// Start execution state
+				buttonRenderer.startTaskExecution(lineNumber);
+
+				// Show user feedback
+				vscode.window.showInformationMessage(`TaskFlow: Retrying task at line ${lineNumber + 1}...`);
+
+				// Simulate task execution (replace with actual agent communication later)
+				await new Promise(resolve => setTimeout(resolve, 1500));
+
+				// End execution state with success
+				buttonRenderer.endTaskExecution(lineNumber, true);
+
+				vscode.window.showInformationMessage(`TaskFlow: Task retry completed successfully!`);
+
+			} catch (error) {
+				// End execution state with error
+				buttonRenderer.endTaskExecution(lineNumber, false);
+				vscode.window.showErrorMessage(`TaskFlow: Task retry failed: ${error}`);
+			}
 		});
 
 		// Register all commands
