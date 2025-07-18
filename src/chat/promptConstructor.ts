@@ -51,6 +51,6 @@ export class PromptConstructor {
      * Create a simple test prompt
      */
     static createTestPrompt(): string {
-        return '# 🧪 TaskFlow Test\n\nHello! This is a test from TaskFlow extension. Please respond to confirm the chat integration is working.';
+        return '# 🧪 PufferFlow Test\n\nHello! This is a test from PufferFlow extension. Please respond to confirm the chat integration is working.';
     }
 }

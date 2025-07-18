@@ -6,7 +6,7 @@ import { ChatPromptInjector } from './chat/chatPromptInjector';
 import { ChatCapabilityDetector } from './chat/chatCapabilityDetector';
 
 /**
- * Simplified chat integration for TaskFlow
+ * Simplified chat integration for PufferFlow
  * Refactored into modular components for better maintainability
  */
 export class ChatIntegrator {
@@ -18,7 +18,7 @@ export class ChatIntegrator {
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
-        this.outputChannel = vscode.window.createOutputChannel('TaskFlow Chat');
+        this.outputChannel = vscode.window.createOutputChannel('PufferFlow Chat');
 
         // Initialize modular components
         this.steeringManager = new SteeringDocumentManager(this.outputChannel);
@@ -164,7 +164,7 @@ export class ChatIntegrator {
     private log(message: string): void {
         const timestamp = new Date().toISOString();
         this.outputChannel.appendLine(`[${timestamp}] ${message}`);
-        console.log(`TaskFlow Chat: ${message}`);
+        console.log(`PufferFlow Chat: ${message}`);
     }
 
     /**
@@ -173,7 +173,7 @@ export class ChatIntegrator {
     private logError(message: string): void {
         const timestamp = new Date().toISOString();
         this.outputChannel.appendLine(`[${timestamp}] ERROR: ${message}`);
-        console.error(`TaskFlow Chat Error: ${message}`);
+        console.error(`PufferFlow Chat Error: ${message}`);
     }
 
     /**

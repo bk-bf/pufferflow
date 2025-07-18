@@ -44,9 +44,9 @@ export interface ButtonRendererInterface {
 }
 
 /**
- * TaskFlow CodeLens Provider for rendering interactive buttons
+ * PufferFlow CodeLens Provider for rendering interactive buttons
  */
-class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
+class PufferFlowCodeLensProvider implements vscode.CodeLensProvider {
 	private _onDidChangeCodeLenses = new vscode.EventEmitter<void>();
 	public readonly onDidChangeCodeLenses = this._onDidChangeCodeLenses.event;
 
@@ -82,7 +82,7 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 
 			// Debug logging
 			if (existingButton) {
-				console.log(`TaskFlow: Button state for line ${line + 1}: ${ButtonState[existingButton.state]} (isLoading: ${isLoading}, isExecuting: ${isExecuting})`);
+				console.log(`PufferFlow: Button state for line ${line + 1}: ${ButtonState[existingButton.state]} (isLoading: ${isLoading}, isExecuting: ${isExecuting})`);
 			}
 
 			if (task.isCompleted) {
@@ -95,7 +95,7 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 
 				// Add a separate retry button with state-aware styling
 				let retryTitle = '$(refresh)';
-				let retryCommand = 'taskflow.retryTask';
+				let retryCommand = 'PufferFlow.retryTask';
 
 				if (isLoading || isExecuting) {
 					retryTitle = '$(sync~spin)  Retrying...';
@@ -116,7 +116,7 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 				if (isLoading || isExecuting) {
 					const abortButton = new vscode.CodeLens(range, {
 						title: '$(x)  Abort',
-						command: 'taskflow.abortTask',
+						command: 'PufferFlow.abortTask',
 						arguments: [line, task]
 					});
 					codeLenses.push(abortButton);
@@ -124,7 +124,7 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 			} else {
 				// For incomplete tasks, show start button with state-aware styling
 				let startTitle = '$(play)  Start Task';
-				let startCommand = 'taskflow.startTask';
+				let startCommand = 'PufferFlow.startTask';
 
 				if (isLoading || isExecuting) {
 					startTitle = '$(sync~spin)  Executing...';
@@ -145,7 +145,7 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 				if (isLoading || isExecuting) {
 					const abortButton = new vscode.CodeLens(range, {
 						title: '$(x)  Abort',
-						command: 'taskflow.abortTask',
+						command: 'PufferFlow.abortTask',
 						arguments: [line, task]
 					});
 					codeLenses.push(abortButton);
@@ -173,10 +173,10 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 		const button = this.buttons.get(buttonId);
 
 		if (button) {
-			console.log(`TaskFlow: Updating button state for line ${lineNumber + 1} to ${ButtonState[state]}`);
+			console.log(`PufferFlow: Updating button state for line ${lineNumber + 1} to ${ButtonState[state]}`);
 			button.state = state;
 		} else {
-			console.log(`TaskFlow: Creating new button state for line ${lineNumber + 1} with state ${ButtonState[state]}`);
+			console.log(`PufferFlow: Creating new button state for line ${lineNumber + 1} with state ${ButtonState[state]}`);
 			// Create a temporary button entry if it doesn't exist
 			this.buttons.set(buttonId, {
 				id: buttonId,
@@ -219,7 +219,7 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
  * ButtonRenderer implementation for creating UI overlays
  */
 export class ButtonRenderer implements ButtonRendererInterface {
-	private codeLensProvider: TaskFlowCodeLensProvider;
+	private codeLensProvider: PufferFlowCodeLensProvider;
 	private taskParser: any;
 	private disposables: vscode.Disposable[] = [];
 	public stateManager: StateManager;
@@ -235,8 +235,8 @@ export class ButtonRenderer implements ButtonRendererInterface {
 
 	constructor(taskParser: any) {
 		this.taskParser = taskParser;
-		this.codeLensProvider = new TaskFlowCodeLensProvider(taskParser, this);
-		this.stateManager = new StateManager(vscode.window.createOutputChannel('TaskFlow State'));
+		this.codeLensProvider = new PufferFlowCodeLensProvider(taskParser, this);
+		this.stateManager = new StateManager(vscode.window.createOutputChannel('PufferFlow State'));
 
 		// Register CodeLens provider
 		const codeLensDisposable = vscode.languages.registerCodeLensProvider(
@@ -348,16 +348,16 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	 * Start task execution - puts button in loading state and disables interaction
 	 */
 	startTaskExecution(lineNumber: number): void {
-		console.log(`TaskFlow: Starting task execution for line ${lineNumber + 1}`);
+		console.log(`PufferFlow: Starting task execution for line ${lineNumber + 1}`);
 
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) {
-			console.log('TaskFlow: No active editor for startTaskExecution');
+			console.log('PufferFlow: No active editor for startTaskExecution');
 			return;
 		}
 
 		const documentUri = editor.document.uri.toString();
-		console.log(`TaskFlow: Setting button to loading state for ${documentUri} line ${lineNumber + 1}`);
+		console.log(`PufferFlow: Setting button to loading state for ${documentUri} line ${lineNumber + 1}`);
 
 		// Track this task as loading
 		const taskKey = `${documentUri}-${lineNumber}`;
@@ -402,7 +402,7 @@ export class ButtonRenderer implements ButtonRendererInterface {
 			// Check if the change contains a completed task checkbox
 			const changedText = change.text;
 			if (changedText.includes('- [x]') || changedText.includes('-[x]')) {
-				console.log('TaskFlow: Detected task completion marker in document change');
+				console.log('PufferFlow: Detected task completion marker in document change');
 
 				// Get the line numbers that were affected
 				const startLine = change.range.start.line;
@@ -420,14 +420,14 @@ export class ButtonRenderer implements ButtonRendererInterface {
 
 								// Check if this line now contains a completed task
 								if (lineText.includes('- [x]') || lineText.includes('-[x]')) {
-									console.log(`TaskFlow: Task on line ${taskInfo.lineNumber + 1} is now completed`);
+									console.log(`PufferFlow: Task on line ${taskInfo.lineNumber + 1} is now completed`);
 
 									// End the loading state for this task (this handles cleanup)
 									this.endTaskExecution(taskInfo.lineNumber, true);
 									break; // Exit the inner loop since we found the completed task
 								}
 							} catch (error) {
-								console.log(`TaskFlow: Could not check line ${taskInfo.lineNumber + 1}: ${error}`);
+								console.log(`PufferFlow: Could not check line ${taskInfo.lineNumber + 1}: ${error}`);
 							}
 						}
 					}
@@ -440,7 +440,7 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	 * End task execution - removes loading state and restores normal interaction
 	 */
 	endTaskExecution(lineNumber: number, success: boolean = true): void {
-		console.log(`TaskFlow: Ending task execution for line ${lineNumber + 1} (success: ${success})`);
+		console.log(`PufferFlow: Ending task execution for line ${lineNumber + 1} (success: ${success})`);
 
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) {
@@ -477,7 +477,7 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	 * Abort a currently executing task
 	 */
 	async abortTask(lineNumber: number): Promise<void> {
-		console.log(`TaskFlow: Aborting task execution for line ${lineNumber + 1}`);
+		console.log(`PufferFlow: Aborting task execution for line ${lineNumber + 1}`);
 
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) {
@@ -510,7 +510,7 @@ export class ButtonRenderer implements ButtonRendererInterface {
 		this.clearDecorations(editor, lineNumber);
 
 		// Show info message
-		console.log(`TaskFlow: Task on line ${lineNumber + 1} aborted`);
+		console.log(`PufferFlow: Task on line ${lineNumber + 1} aborted`);
 
 		// Refresh CodeLens to update button states
 		this.codeLensProvider.refresh();

@@ -1,17 +1,17 @@
-# Design Document: TaskFlow Extension
+# Design Document: PufferFlow Extension
 
 ## Overview
 
-TaskFlow is a VS Code extension that adds interactive "Start Task" and "Retry" buttons above markdown task items in tasks.md files. The extension enables instant agent execution with zero friction by allowing users to execute tasks directly from their markdown files without manual copy-paste or context switching.
+PufferFlow is a VS Code extension that adds interactive "Start Task" and "Retry" buttons above markdown task items in tasks.md files. The extension enables instant agent execution with zero friction by allowing users to execute tasks directly from their markdown files without manual copy-paste or context switching.
 
 The design follows strict scope discipline with a focus on the weekend MVP timeline and zero-friction goal. The extension will detect task items in markdown files, render appropriate buttons, handle agent communication, and manage task completion state.
 
 ## Architecture
 
-The TaskFlow extension follows a modular architecture with clear separation of concerns:
+The PufferFlow extension follows a modular architecture with clear separation of concerns:
 
 ```
-TaskFlow Extension
+PufferFlow Extension
 ├── Markdown Parser (tasks.md detection)
 ├── Button Renderer (UI overlay)
 ├── Agent Communicator (VS Code API)

@@ -47,7 +47,7 @@ class MockAgentCommunicator {
     private outputChannel: any;
 
     constructor(context: any) {
-        this.outputChannel = vscode.window.createOutputChannel('TaskFlow Agent');
+        this.outputChannel = vscode.window.createOutputChannel('PufferFlow Agent');
     }
 
     async isAgentAvailable(): Promise<boolean> {
@@ -72,7 +72,7 @@ class MockAgentCommunicator {
         }
 
         return {
-            context: context || "TaskFlow Task Execution",
+            context: context || "PufferFlow Task Execution",
             task: task.taskText.replace(/_Requirements:[^_]+_/, '').trim(),
             requirements
         };

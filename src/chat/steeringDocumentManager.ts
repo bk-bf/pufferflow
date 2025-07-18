@@ -72,12 +72,12 @@ export class SteeringDocumentManager {
     private log(message: string): void {
         const timestamp = new Date().toISOString();
         this.outputChannel.appendLine(`[${timestamp}] ${message}`);
-        console.log(`TaskFlow Chat: ${message}`);
+        console.log(`PufferFlow Chat: ${message}`);
     }
 
     private logError(message: string): void {
         const timestamp = new Date().toISOString();
         this.outputChannel.appendLine(`[${timestamp}] ERROR: ${message}`);
-        console.error(`TaskFlow Chat Error: ${message}`);
+        console.error(`PufferFlow Chat Error: ${message}`);
     }
 }

@@ -1,4 +1,4 @@
-# TaskFlow Extension - Project Overview
+# PufferFlow Extension - Project Overview
 
 ## Core Mission
 Build a VS Code extension that adds "Start Task" and "Retry" buttons above markdown task items for instant agent execution with zero friction.

@@ -76,6 +76,6 @@ export class ChatCapabilityDetector {
     private logError(message: string): void {
         const timestamp = new Date().toISOString();
         this.outputChannel.appendLine(`[${timestamp}] ERROR: ${message}`);
-        console.error(`TaskFlow Chat Error: ${message}`);
+        console.error(`PufferFlow Chat Error: ${message}`);
     }
 }

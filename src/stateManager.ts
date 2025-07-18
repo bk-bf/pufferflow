@@ -163,12 +163,12 @@ export class StateManager implements StateManagerInterface {
 	private log(message: string): void {
 		const timestamp = new Date().toISOString();
 		this.outputChannel.appendLine(`[${timestamp}] ${message}`);
-		console.log(`TaskFlow StateManager: ${message}`);
+		console.log(`PufferFlow StateManager: ${message}`);
 	}
 
 	private logError(message: string): void {
 		const timestamp = new Date().toISOString();
 		this.outputChannel.appendLine(`[${timestamp}] ERROR: ${message}`);
-		console.error(`TaskFlow StateManager Error: ${message}`);
+		console.error(`PufferFlow StateManager Error: ${message}`);
 	}
 }

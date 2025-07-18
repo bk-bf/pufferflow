@@ -2,7 +2,7 @@
 
 ## File Structure
 ```
-taskflow/
+PufferFlow/
 ├── src/
 │   ├── extension.ts (main entry point)
 │   ├── taskParser.ts (markdown parsing)
@@ -15,9 +15,9 @@ taskflow/
 
 ## Core Components
 
-### TaskFlow Extension Architecture
+### PufferFlow Extension Architecture
 ```
-TaskFlow Extension
+PufferFlow Extension
 ├── Markdown Parser (tasks.md detection)
 ├── Button Renderer (UI overlay)
 ├── Agent Communicator (VS Code API)
