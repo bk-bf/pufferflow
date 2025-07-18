@@ -123,14 +123,14 @@ class PufferFlowCodeLensProvider implements vscode.CodeLensProvider {
 				}
 			} else {
 				// For incomplete tasks, show start button with state-aware styling
-				let startTitle = '$(play)  Start Task';
+				let startTitle = '$(play) Start Task 🐡 ';
 				let startCommand = 'PufferFlow.startTask';
 
 				if (isLoading || isExecuting) {
 					startTitle = '$(sync~spin)  Executing...';
 					startCommand = ''; // Disable command when loading
 				} else if (isDisabled) {
-					startTitle = '$(circle-slash)  Start Task';
+					startTitle = '$(circle-slash)  Start Task 🐡 ';
 					startCommand = ''; // Disable command when disabled
 				}
 
