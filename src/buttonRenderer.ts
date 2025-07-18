@@ -76,6 +76,11 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 			const isLoading = existingButton?.state === ButtonState.Loading;
 			const isDisabled = existingButton?.state === ButtonState.Disabled;
 
+			// Debug logging
+			if (existingButton) {
+				console.log(`TaskFlow: Button state for line ${line + 1}: ${ButtonState[existingButton.state]} (isLoading: ${isLoading})`);
+			}
+
 			if (task.isCompleted) {
 				// For completed tasks, show "Task completed" indicator with green checkmark
 				const completedIndicator = new vscode.CodeLens(range, {
@@ -144,9 +149,22 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 		const button = this.buttons.get(buttonId);
 
 		if (button) {
+			console.log(`TaskFlow: Updating button state for line ${lineNumber + 1} to ${ButtonState[state]}`);
 			button.state = state;
-			this._onDidChangeCodeLenses.fire();
+		} else {
+			console.log(`TaskFlow: Creating new button state for line ${lineNumber + 1} with state ${ButtonState[state]}`);
+			// Create a temporary button entry if it doesn't exist
+			this.buttons.set(buttonId, {
+				id: buttonId,
+				lineNumber: lineNumber,
+				state: state,
+				type: 'start', // Will be updated when provideCodeLenses runs
+				taskItem: {} as TaskItem // Will be updated when provideCodeLenses runs
+			});
 		}
+
+		// Always fire the change event to refresh the CodeLenses
+		this._onDidChangeCodeLenses.fire();
 	}
 
 	/**
@@ -187,6 +205,9 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	private successDecorationType!: vscode.TextEditorDecorationType;
 	private buttonHighlightDecorationType!: vscode.TextEditorDecorationType;
 
+	// Track tasks that are currently in loading state
+	private loadingTasks: Map<string, { lineNumber: number; documentUri: string }> = new Map();
+
 	constructor(taskParser: any) {
 		this.taskParser = taskParser;
 		this.codeLensProvider = new TaskFlowCodeLensProvider(taskParser, this);
@@ -207,9 +228,12 @@ export class ButtonRenderer implements ButtonRendererInterface {
 		});
 		this.disposables.push(editorChangeListener);
 
-		// Listen for document changes
+		// Listen for document changes to detect task completion
 		const documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
 			if (this.taskParser.isTasksDocument(event.document)) {
+				// Check if any loading tasks got completed
+				this.checkForTaskCompletion(event);
+
 				// Slight delay to allow for multiple rapid changes
 				setTimeout(() => {
 					this.codeLensProvider.refresh();
@@ -298,12 +322,20 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	 * Start task execution - puts button in loading state and disables interaction
 	 */
 	startTaskExecution(lineNumber: number): void {
+		console.log(`TaskFlow: Starting task execution for line ${lineNumber + 1}`);
+
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) {
+			console.log('TaskFlow: No active editor for startTaskExecution');
 			return;
 		}
 
 		const documentUri = editor.document.uri.toString();
+		console.log(`TaskFlow: Setting button to loading state for ${documentUri} line ${lineNumber + 1}`);
+
+		// Track this task as loading
+		const taskKey = `${documentUri}-${lineNumber}`;
+		this.loadingTasks.set(taskKey, { lineNumber, documentUri });
 
 		// Update button state to loading
 		this.codeLensProvider.updateButtonState(documentUri, lineNumber, ButtonState.Loading);
@@ -313,15 +345,73 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	}
 
 	/**
+	 * Check if any loading tasks got completed by monitoring document changes
+	 */
+	private checkForTaskCompletion(event: vscode.TextDocumentChangeEvent): void {
+		if (this.loadingTasks.size === 0) {
+			return; // No tasks currently loading
+		}
+
+		const documentUri = event.document.uri.toString();
+
+		// Check each change to see if it completed a task
+		for (const change of event.contentChanges) {
+			// Check if the change contains a completed task checkbox
+			const changedText = change.text;
+			if (changedText.includes('- [x]') || changedText.includes('-[x]')) {
+				console.log('TaskFlow: Detected task completion marker in document change');
+
+				// Get the line numbers that were affected
+				const startLine = change.range.start.line;
+				const endLine = Math.max(change.range.end.line, startLine + changedText.split('\n').length - 1);
+
+				// Check each loading task to see if it's in the affected range
+				for (const [taskKey, taskInfo] of this.loadingTasks.entries()) {
+					if (taskInfo.documentUri === documentUri) {
+						// Check if the task line was affected or nearby
+						if (taskInfo.lineNumber >= startLine - 2 && taskInfo.lineNumber <= endLine + 2) {
+							// Double-check by examining the actual line content
+							try {
+								const line = event.document.lineAt(taskInfo.lineNumber);
+								const lineText = line.text;
+
+								// Check if this line now contains a completed task
+								if (lineText.includes('- [x]') || lineText.includes('-[x]')) {
+									console.log(`TaskFlow: Task on line ${taskInfo.lineNumber + 1} is now completed`);
+
+									// End the loading state for this task
+									this.endTaskExecution(taskInfo.lineNumber, true);
+
+									// Remove from loading tasks
+									this.loadingTasks.delete(taskKey);
+									break; // Exit the inner loop since we found the completed task
+								}
+							} catch (error) {
+								console.log(`TaskFlow: Could not check line ${taskInfo.lineNumber + 1}: ${error}`);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
 	 * End task execution - removes loading state and restores normal interaction
 	 */
 	endTaskExecution(lineNumber: number, success: boolean = true): void {
+		console.log(`TaskFlow: Ending task execution for line ${lineNumber + 1} (success: ${success})`);
+
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) {
 			return;
 		}
 
 		const documentUri = editor.document.uri.toString();
+		const taskKey = `${documentUri}-${lineNumber}`;
+
+		// Remove from loading tasks tracking
+		this.loadingTasks.delete(taskKey);
 
 		// Update button state back to normal
 		this.codeLensProvider.updateButtonState(documentUri, lineNumber, ButtonState.Normal);

@@ -73,8 +73,22 @@ export function activate(context: vscode.ExtensionContext) {
 				// Use chat integrator for simple task execution
 				const result = await chatIntegrator.executeTask(task);
 
-				// End execution state based on result
-				buttonRenderer.endTaskExecution(lineNumber, result.success);
+				if (result.success && result.keepLoading) {
+					// Keep button in loading state while chat processes
+					// The button will automatically end loading when the task is marked as complete
+					console.log('TaskFlow: Task sent to chat, keeping button in loading state until task completion...');
+
+					// Optional: Set a fallback timeout as a safety net (60 seconds)
+					setTimeout(() => {
+						console.log('TaskFlow: Auto-ending loading state after 60-second safety timeout');
+						buttonRenderer.endTaskExecution(lineNumber, true);
+					}, 60000); // 60 second safety timeout
+
+					// Don't call endTaskExecution immediately - let task completion detection handle it
+				} else {
+					// End execution state based on result (for failures)
+					buttonRenderer.endTaskExecution(lineNumber, result.success);
+				}
 
 				if (!result.success) {
 					console.error(`TaskFlow: ${result.message}`);
