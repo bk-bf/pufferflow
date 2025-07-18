@@ -3,6 +3,7 @@
 	"displayName": "PufferFlow 🐡",
 	"description": "Whimsical markdown task execution with AI agents - Beta Release",
 	"version": "0.1.0-beta",
+	"icon": "images/icon.png",
 	"publisher": "pufferflow",
 	"repository": {
 		"type": "git",
