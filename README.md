@@ -36,18 +36,6 @@ PufferFlow follows Kiro's approach to task execution - intelligent, context-awar
 3. **Watch the Kiro-inspired magic** - Your task gets sent to the agent with steering file context
 4. **Automatic completion** - Tasks puff up to completed state when done, just like Kiro would mark them!
 
-### Example in Action
-
-```markdown
-# My Underwater Project 🐠
-
-- [ ] Set up the coral reef structure
-- [ ] Implement the fish authentication system  
-- [ ] Create the seaweed database migrations
-- [x] Write comprehensive bubble tests
-- [ ] Deploy to the deep sea environment
-```
-
 Each uncompleted task gets a friendly "🐡 Start Task" button, while completed ones show "🔄 Retry" buttons!
 
 ## 🚀 Installation
