@@ -1,133 +1,124 @@
-# TaskFlow
+# PufferFlow 🐡 
+**Beta Release - Fresh from the Deep! 🌊**
 
-**Bring intelligent task execution to VS Code with zero friction.**
+**Turn your tasks.md into a sea of possibilities with one-click execution.**
 
-TaskFlow is a VS Code extension that transforms your markdown task lists into powerful, executable workflows. With intelligent agent integration and one-click task execution, TaskFlow brings advanced automation capabilities directly into your development environment.
+PufferFlow is a whimsical VS Code extension that adds magical "Start Task" and "Retry" buttons above your markdown task items. Watch your tasks come to life as our friendly pufferfish guides transform your to-do lists into executable workflows with zero friction!
 
-## 🚀 Key Features
+> **🚧 Beta Notice**: PufferFlow is fresh from the development depths! While our pufferfish is eager to help, you might encounter some rough waters. The code is still getting optimized and bugs are being squashed daily. Dive in with a spirit of adventure! 🐡
 
-### Intelligent Task Detection
-- Automatically detects task items in your markdown files
-- Seamlessly integrates with existing `tasks.md` workflows
-- Support for both completed `- [x]` and pending `- [ ]` tasks
+## 🐡 What Makes PufferFlow Special?
 
-### One-Click Execution
-- **Start Task** buttons appear above uncompleted tasks
-- **Retry** buttons for re-executing completed tasks
-- Real-time visual feedback during task execution
-- Automatic state management and progress tracking
-
-### Advanced Agent Integration
-- Leverages VS Code's built-in agent capabilities
-- Intelligent prompt construction with context awareness
-- Includes steering documentation and project context
-- Robust error handling and fallback mechanisms
+### Instant Task Activation
+- **Puff & Go**: Click "Start Task" and watch the magic happen
+- **Second Chances**: "Retry" buttons for when tasks need another swim
+- **Smart Detection**: Automatically spots `- [ ]` and `- [x]` tasks in your `tasks.md`
+- **Agent-Powered**: Works beautifully with VS Code's agent mode (GitHub Copilot recommended)
 
 ### Zero-Friction Workflow
 - No context switching required
 - Direct execution from markdown files
-- Automatic task completion marking
-- Seamless state persistence
+- Automatic task completion marking (`- [ ]` → `- [x]`)
+- Seamless integration with your existing workflow
 
-## 🎯 Why TaskFlow?
+## 🌊 How It Works
 
-TaskFlow bridges the gap between planning and execution by making your task lists actionable. Instead of manually copying tasks and switching contexts, execute complex workflows directly from your markdown files with intelligent agent assistance.
+1. **Open your `tasks.md`** - PufferFlow automatically detects your tasks
+2. **Click the shiny buttons** - CodeLens buttons appear above each task
+3. **Watch the magic** - Your task gets sent to the agent with steering file context
+4. **Automatic completion** - Tasks puff up to completed state when done!
 
-**Perfect for:**
-- Project planning and execution
-- Development workflows
-- Documentation tasks
-- Automated development processes
-- Team collaboration workflows
-
-## 🛠️ How It Works
-
-1. **Open your `tasks.md` file** - TaskFlow automatically detects task items
-2. **Click "Start Task"** - The extension constructs an intelligent prompt with full context
-3. **Agent executes** - VS Code's agent system handles the task execution
-4. **Automatic completion** - Tasks are marked complete and state is persisted
-
-### Example Workflow
+### Example in Action
 
 ```markdown
-# My Project Tasks
+# My Underwater Project 🐠
 
-- [ ] Set up project structure and dependencies
-- [ ] Implement user authentication system  
-- [ ] Create database schema and migrations
-- [x] Write comprehensive test suite
-- [ ] Deploy to staging environment
+- [ ] Set up the coral reef structure
+- [ ] Implement the fish authentication system  
+- [ ] Create the seaweed database migrations
+- [x] Write comprehensive bubble tests
+- [ ] Deploy to the deep sea environment
 ```
 
-Each uncompleted task gets a "Start Task" button, while completed tasks show "Retry" buttons for re-execution.
-
-## 🏗️ Technical Architecture
-
-TaskFlow is built with a modular, efficient architecture:
-
-- **Markdown Parser**: Intelligent task detection and parsing
-- **Button Renderer**: Lightweight UI overlay system
-- **Agent Communicator**: VS Code API integration with fallback support
-- **State Manager**: Automatic completion tracking and persistence
-
-### Core Technologies
-- **VS Code Extension API**: Native platform integration
-- **TypeScript**: Type-safe development
-- **Markdown-it**: Efficient parsing engine
-- **Minimal Dependencies**: Performance-focused approach
-
-## 📋 Requirements
-
-- VS Code 1.74.0 or higher
-- VS Code agent capabilities (GitHub Copilot or compatible agent)
+Each uncompleted task gets a friendly "🐡 Start Task" button, while completed ones show "🔄 Retry" buttons!
 
 ## 🚀 Installation
 
-1. Open VS Code Extensions panel (`Ctrl+Shift+X`)
-2. Search for "TaskFlow"
+1. Open VS Code Extensions (`Ctrl+Shift+X`)
+2. Search for "PufferFlow"
 3. Click Install
-4. Open any `tasks.md` file to start using TaskFlow
+4. Open any `tasks.md` file and watch the pufferfish magic begin!
 
-## 🎨 Usage
+**Beta Disclaimer**: Expect some splashing as we refine the experience!
 
-### Basic Task Execution
-1. Create or open a `tasks.md` file
-2. Add tasks using markdown checkbox syntax: `- [ ] Your task here`
-3. Click the "Start Task" button that appears above the task
-4. Watch as the agent executes your task and automatically marks it complete
+## 🎯 Perfect For
 
-### Advanced Features
-- **Context-Aware Execution**: TaskFlow includes project context and steering documentation in agent prompts
-- **State Persistence**: Task completion state is automatically saved
-- **Visual Feedback**: Real-time loading indicators during execution
-- **Error Recovery**: Robust error handling with retry capabilities
+- **Project Planning**: Turn your ideas into action
+- **Development Workflows**: Automate your coding tasks
+- **Documentation**: Make your docs executable
+- **Team Collaboration**: Share actionable task lists
+- **Learning**: Practice with guided, contextual assistance
+- **Beta Testing**: Help us make PufferFlow even better!
 
-### Configuration
-TaskFlow works out of the box with sensible defaults. The extension automatically:
-- Detects `tasks.md` files and similar markdown task lists
-- Integrates with your configured VS Code agent
-- Manages task state and file persistence
+## 🛠️ Technical Details
+
+PufferFlow uses VS Code's CodeLens API to create lightweight, non-intrusive buttons above your task items. When clicked, tasks are sent to your configured agent along with steering file context for intelligent execution.
+
+### Requirements
+- VS Code 1.74.0 or higher
+- Agent mode enabled (GitHub Copilot or compatible)
+- A sense of whimsy 🐡
+- Patience for beta quirks 😊
+
+### Under the Hood
+- **CodeLens Integration**: Lightweight UI that doesn't interfere with your editing
+- **Markdown Parser**: Intelligently detects task patterns
+- **Agent Communication**: Constructs context-aware prompts with steering files
+- **State Management**: Automatically toggles task completion states
+
+*Note: The code is still swimming through optimization waters - performance improvements and bug fixes are ongoing!*
+
+## 🎨 Why PufferFlow?
+
+Because your tasks deserve more than just sitting there looking sad! PufferFlow brings personality and power to your productivity workflow. Like a pufferfish that transforms when needed, your static task lists become dynamic, executable workflows.
+
+**Features that make you smile:**
+- 🐡 Whimsical button text and interactions
+- 🌊 Smooth, bubble-like execution flow
+- 🎯 Intelligent context inclusion from steering files
+- 🔄 Effortless retry capabilities
+- 📝 Automatic progress tracking
+
+## 🐛 Known Beta Limitations
+
+- Code optimization is ongoing
+- Some edge cases may cause unexpected behavior
+- Performance improvements are in progress
+- Error handling is being refined
 
 ## 🤝 Contributing
 
-We welcome contributions! TaskFlow is designed with:
-- Clean, modular architecture
-- Comprehensive TypeScript types
-- Minimal dependencies
-- Performance-first approach
+Want to help make PufferFlow even more magical? We welcome contributions! The codebase is designed to be as friendly as our pufferfish mascot, though it's still getting its fins organized.
+
+**Beta Contributors Welcome!**
+- Bug reports and feedback
+- Code optimizations
+- Feature suggestions
+- Testing across different setups
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License - As free as fish in the sea!
 
-## 🎯 Roadmap
+## 🗺️ Roadmap
 
-- Enhanced task templating and patterns
+- **Immediate**: Code optimization and bug fixes
+- Enhanced task templating (different fish for different tasks?)
 - Team collaboration features
 - Custom agent integration options
-- Advanced workflow automation
+- More aquatic-themed delights
 - Performance optimizations
 
----
+**Ready to dive into effortless task execution? Install PufferFlow and let your tasks swim to completion! 🐡✨**
 
-**Ready to supercharge your task workflows? Install TaskFlow and experience the future of executable documentation.**
+*PufferFlow Beta: Where productivity meets personality in the vast ocean of VS Code extensions. Expect some waves as we navigate to version 1.0!*

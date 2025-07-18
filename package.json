@@ -1,18 +1,28 @@
 {
-	"name": "taskflow",
-	"displayName": "TaskFlow",
-	"description": "Execute markdown tasks with AI agents",
-	"version": "0.1.0",
-	"publisher": "taskflow",
+	"name": "pufferflow",
+	"displayName": "PufferFlow 🐡",
+	"description": "Whimsical markdown task execution with AI agents - Beta Release",
+	"version": "0.1.0-beta",
+	"publisher": "pufferflow",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/bk-bf/taskflow.git"
+		"url": "https://github.com/bk-bf/pufferflow.git"
 	},
 	"engines": {
 		"vscode": "^1.74.0"
 	},
 	"categories": [
 		"Other"
+	],
+	"keywords": [
+		"markdown",
+		"tasks",
+		"ai",
+		"agent",
+		"productivity",
+		"automation",
+		"codelens",
+		"beta"
 	],
 	"activationEvents": [
 		"onLanguage:markdown"
@@ -21,16 +31,16 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "taskflow.startTask",
-				"title": "Start Task"
+				"command": "pufferflow.startTask",
+				"title": "🐡 Start Task"
 			},
 			{
-				"command": "taskflow.retryTask",
-				"title": "Retry Task"
+				"command": "pufferflow.retryTask",
+				"title": "🔄 Retry Task"
 			},
 			{
-				"command": "taskflow.test",
-				"title": "TaskFlow: Test"
+				"command": "pufferflow.test",
+				"title": "PufferFlow: Test"
 			}
 		]
 	},
