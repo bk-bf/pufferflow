@@ -7,6 +7,7 @@ export interface TaskItem {
 	lineNumber: number;
 	taskText: string;
 	isCompleted: boolean;
+	isExecuting?: boolean; // New property for [-] state
 	indentationLevel: number;
 }
 
@@ -43,9 +44,9 @@ export interface TaskParserInterface {
 export class TaskParser implements TaskParserInterface {
 
 	private readonly taskPatterns = [
-		/^(\s*)-\s*\[([ xX])\]\s*(.+)$/,  // Standard: - [ ] or - [x]
-		/^(\s*)\*\s*\[([ xX])\]\s*(.+)$/,  // Asterisk: * [ ] or * [x]
-		/^(\s*)\+\s*\[([ xX])\]\s*(.+)$/   // Plus: + [ ] or + [x]
+		/^(\s*)-\s*\[([ xX\-])\]\s*(.+)$/,  // Standard: - [ ] or - [x] or - [-]
+		/^(\s*)\*\s*\[([ xX\-])\]\s*(.+)$/,  // Asterisk: * [ ] or * [x] or * [-]
+		/^(\s*)\+\s*\[([ xX\-])\]\s*(.+)$/   // Plus: + [ ] or + [x] or + [-]
 	];
 
 	// Cache for parsed results
@@ -219,13 +220,15 @@ export class TaskParser implements TaskParserInterface {
 			if (match) {
 				const [, indentation, checkState, taskText] = match;
 				const isCompleted = checkState.toLowerCase() === 'x';
+				const isExecuting = checkState === '-';
 				const indentationLevel = indentation.length;
 
 				return {
 					lineNumber,
 					taskText: taskText.trim(),
 					isCompleted,
-					indentationLevel
+					indentationLevel,
+					isExecuting // Add this new property
 				};
 			}
 		}

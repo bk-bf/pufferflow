@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { TaskItem } from './taskParser';
+import { StateManager } from './stateManager';
 
 /**
  * Button position interface
@@ -76,9 +77,12 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 			const isLoading = existingButton?.state === ButtonState.Loading;
 			const isDisabled = existingButton?.state === ButtonState.Disabled;
 
+			// Check if task is currently executing (has [-] marker)
+			const isExecuting = task.isExecuting || false;
+
 			// Debug logging
 			if (existingButton) {
-				console.log(`TaskFlow: Button state for line ${line + 1}: ${ButtonState[existingButton.state]} (isLoading: ${isLoading})`);
+				console.log(`TaskFlow: Button state for line ${line + 1}: ${ButtonState[existingButton.state]} (isLoading: ${isLoading}, isExecuting: ${isExecuting})`);
 			}
 
 			if (task.isCompleted) {
@@ -93,7 +97,7 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 				let retryTitle = '$(refresh)';
 				let retryCommand = 'taskflow.retryTask';
 
-				if (isLoading) {
+				if (isLoading || isExecuting) {
 					retryTitle = '$(sync~spin)  Retrying...';
 					retryCommand = ''; // Disable command when loading
 				} else if (isDisabled) {
@@ -107,12 +111,22 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 					arguments: retryCommand ? [line, task] : undefined
 				});
 				codeLenses.push(retryButton);
+
+				// Add abort button if task is executing
+				if (isLoading || isExecuting) {
+					const abortButton = new vscode.CodeLens(range, {
+						title: '$(x)  Abort',
+						command: 'taskflow.abortTask',
+						arguments: [line, task]
+					});
+					codeLenses.push(abortButton);
+				}
 			} else {
 				// For incomplete tasks, show start button with state-aware styling
 				let startTitle = '$(play)  Start Task';
 				let startCommand = 'taskflow.startTask';
 
-				if (isLoading) {
+				if (isLoading || isExecuting) {
 					startTitle = '$(sync~spin)  Executing...';
 					startCommand = ''; // Disable command when loading
 				} else if (isDisabled) {
@@ -126,6 +140,16 @@ class TaskFlowCodeLensProvider implements vscode.CodeLensProvider {
 					arguments: startCommand ? [line, task] : undefined
 				});
 				codeLenses.push(startButton);
+
+				// Add abort button if task is executing
+				if (isLoading || isExecuting) {
+					const abortButton = new vscode.CodeLens(range, {
+						title: '$(x)  Abort',
+						command: 'taskflow.abortTask',
+						arguments: [line, task]
+					});
+					codeLenses.push(abortButton);
+				}
 			}
 
 			// Store/update button data for state management
@@ -198,6 +222,7 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	private codeLensProvider: TaskFlowCodeLensProvider;
 	private taskParser: any;
 	private disposables: vscode.Disposable[] = [];
+	public stateManager: StateManager;
 
 	// Decoration types for visual feedback
 	private loadingDecorationType!: vscode.TextEditorDecorationType;
@@ -205,12 +230,13 @@ export class ButtonRenderer implements ButtonRendererInterface {
 	private successDecorationType!: vscode.TextEditorDecorationType;
 	private buttonHighlightDecorationType!: vscode.TextEditorDecorationType;
 
-	// Track tasks that are currently in loading state
-	private loadingTasks: Map<string, { lineNumber: number; documentUri: string }> = new Map();
+	// Track tasks that are currently in loading state with timeout handling
+	private loadingTasks: Map<string, { lineNumber: number; documentUri: string; timeoutId: NodeJS.Timeout }> = new Map();
 
 	constructor(taskParser: any) {
 		this.taskParser = taskParser;
 		this.codeLensProvider = new TaskFlowCodeLensProvider(taskParser, this);
+		this.stateManager = new StateManager(vscode.window.createOutputChannel('TaskFlow State'));
 
 		// Register CodeLens provider
 		const codeLensDisposable = vscode.languages.registerCodeLensProvider(
@@ -335,7 +361,24 @@ export class ButtonRenderer implements ButtonRendererInterface {
 
 		// Track this task as loading
 		const taskKey = `${documentUri}-${lineNumber}`;
-		this.loadingTasks.set(taskKey, { lineNumber, documentUri });
+
+		// Mark task as executing in the document
+		this.stateManager.markTaskExecuting(editor.document, lineNumber);
+
+		// Set up timeout to revert to incomplete after 60 seconds
+		const timeoutId = setTimeout(async () => {
+			try {
+				// Get the current document
+				const currentDoc = await vscode.workspace.openTextDocument(vscode.Uri.parse(documentUri));
+				await this.stateManager.markTaskIncomplete(currentDoc, lineNumber);
+				this.loadingTasks.delete(taskKey);
+				this.codeLensProvider.refresh();
+			} catch (error) {
+				console.error('Error reverting task state after timeout:', error);
+			}
+		}, 60000); // 60 seconds
+
+		this.loadingTasks.set(taskKey, { lineNumber, documentUri, timeoutId });
 
 		// Update button state to loading
 		this.codeLensProvider.updateButtonState(documentUri, lineNumber, ButtonState.Loading);
@@ -379,11 +422,8 @@ export class ButtonRenderer implements ButtonRendererInterface {
 								if (lineText.includes('- [x]') || lineText.includes('-[x]')) {
 									console.log(`TaskFlow: Task on line ${taskInfo.lineNumber + 1} is now completed`);
 
-									// End the loading state for this task
+									// End the loading state for this task (this handles cleanup)
 									this.endTaskExecution(taskInfo.lineNumber, true);
-
-									// Remove from loading tasks
-									this.loadingTasks.delete(taskKey);
 									break; // Exit the inner loop since we found the completed task
 								}
 							} catch (error) {
@@ -410,6 +450,12 @@ export class ButtonRenderer implements ButtonRendererInterface {
 		const documentUri = editor.document.uri.toString();
 		const taskKey = `${documentUri}-${lineNumber}`;
 
+		// Clear timeout if it exists
+		const taskInfo = this.loadingTasks.get(taskKey);
+		if (taskInfo && taskInfo.timeoutId) {
+			clearTimeout(taskInfo.timeoutId);
+		}
+
 		// Remove from loading tasks tracking
 		this.loadingTasks.delete(taskKey);
 
@@ -425,6 +471,49 @@ export class ButtonRenderer implements ButtonRendererInterface {
 		} else {
 			this.showErrorDecoration(editor, lineNumber);
 		}
+	}
+
+	/**
+	 * Abort a currently executing task
+	 */
+	async abortTask(lineNumber: number): Promise<void> {
+		console.log(`TaskFlow: Aborting task execution for line ${lineNumber + 1}`);
+
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			return;
+		}
+
+		const documentUri = editor.document.uri.toString();
+		const taskKey = `${documentUri}-${lineNumber}`;
+
+		// Try to abort LLM request if it exists
+		// Note: We'll need a reference to chatIntegrator for this
+		// For now, we'll add a TODO and implement this in the extension.ts
+
+		// Clear timeout if it exists
+		const taskInfo = this.loadingTasks.get(taskKey);
+		if (taskInfo && taskInfo.timeoutId) {
+			clearTimeout(taskInfo.timeoutId);
+		}
+
+		// Mark task as incomplete in the document
+		await this.stateManager.markTaskIncomplete(editor.document, lineNumber);
+
+		// Remove from loading tasks tracking
+		this.loadingTasks.delete(taskKey);
+
+		// Update button state back to normal
+		this.codeLensProvider.updateButtonState(documentUri, lineNumber, ButtonState.Normal);
+
+		// Clear loading decoration
+		this.clearDecorations(editor, lineNumber);
+
+		// Show info message
+		console.log(`TaskFlow: Task on line ${lineNumber + 1} aborted`);
+
+		// Refresh CodeLens to update button states
+		this.codeLensProvider.refresh();
 	}
 
 	/**

@@ -78,12 +78,7 @@ export function activate(context: vscode.ExtensionContext) {
 					// The button will automatically end loading when the task is marked as complete
 					console.log('TaskFlow: Task sent to chat, keeping button in loading state until task completion...');
 
-					// Optional: Set a fallback timeout as a safety net (60 seconds)
-					setTimeout(() => {
-						console.log('TaskFlow: Auto-ending loading state after 60-second safety timeout');
-						buttonRenderer.endTaskExecution(lineNumber, true);
-					}, 60000); // 60 second safety timeout
-
+					// The ButtonRenderer now handles the 60-second timeout automatically
 					// Don't call endTaskExecution immediately - let task completion detection handle it
 				} else {
 					// End execution state based on result (for failures)
@@ -135,10 +130,25 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		});
 
-		// Register all commands
+		// Abort task command
+		const abortTaskCommand = vscode.commands.registerCommand('taskflow.abortTask', async (lineNumber?: number) => {
+			if (lineNumber === undefined) {
+				console.log('TaskFlow: No task line specified');
+				return;
+			}
+
+			try {
+				console.log(`TaskFlow: Aborting task at line ${lineNumber + 1}...`);
+				await buttonRenderer.abortTask(lineNumber);
+
+			} catch (error) {
+				console.error(`TaskFlow: Task abort failed: ${error}`);
+			}
+		});		// Register all commands
 		context.subscriptions.push(testCommand);
 		context.subscriptions.push(startTaskCommand);
 		context.subscriptions.push(retryTaskCommand);
+		context.subscriptions.push(abortTaskCommand);
 		context.subscriptions.push(buttonRenderer);
 		context.subscriptions.push(chatIntegrator);
 
